@@ -1,11 +1,10 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
-import { TrendingDown, TrendingUp, Leaf, Cloud, Zap, Globe } from "lucide-react";
+import { TrendingDown, TrendingUp, Leaf, Cloud, Zap, Globe, FileText } from "lucide-react";
 
 const emissionsData = [
   { month: "Jan", emissions: 125.4, target: 100 },
