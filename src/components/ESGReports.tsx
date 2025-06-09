@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { Calendar, Download, FileText, Send } from "lucide-react";
+import { useState } from "react";
 
 const recentReports = [
   {
@@ -33,6 +35,77 @@ const recentReports = [
 ];
 
 export const ESGReports = () => {
+  const { toast } = useToast();
+  const [reportForm, setReportForm] = useState({
+    name: "",
+    type: "",
+    startDate: "2024-07-01",
+    endDate: "2024-09-30",
+    notes: ""
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!reportForm.name || !reportForm.type) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in the report name and type",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    // Simulate report generation
+    setTimeout(() => {
+      toast({
+        title: "Report Generated Successfully",
+        description: `${reportForm.name} has been generated and is ready for download`,
+      });
+      setIsGenerating(false);
+      
+      // Reset form
+      setReportForm({
+        name: "",
+        type: "",
+        startDate: "2024-07-01",
+        endDate: "2024-09-30",
+        notes: ""
+      });
+    }, 2000);
+  };
+
+  const handleDownloadReport = (reportName: string) => {
+    toast({
+      title: "Download Started",
+      description: `Downloading ${reportName}...`,
+    });
+  };
+
+  const handleShareReport = (reportName: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/reports/share/${reportName.toLowerCase().replace(/\s+/g, '-')}`);
+    toast({
+      title: "Share Link Copied",
+      description: "The shareable link has been copied to your clipboard",
+    });
+  };
+
+  const useTemplate = (templateName: string) => {
+    setReportForm(prev => ({
+      ...prev,
+      name: `${templateName} - ${new Date().toLocaleDateString()}`,
+      type: "quarterly"
+    }));
+    
+    toast({
+      title: "Template Applied",
+      description: `${templateName} template has been applied to the form`,
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -42,7 +115,7 @@ export const ESGReports = () => {
             Generate compliance reports for ESG submission and stakeholder communication
           </p>
         </div>
-        <Button>
+        <Button onClick={() => document.getElementById('generate-form')?.scrollIntoView({ behavior: 'smooth' })}>
           <FileText className="w-4 h-4 mr-2" />
           Generate Report
         </Button>
@@ -50,77 +123,86 @@ export const ESGReports = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Report Generator */}
-        <Card>
+        <Card id="generate-form">
           <CardHeader>
             <CardTitle>Create New Report</CardTitle>
             <CardDescription>
               Generate comprehensive ESG compliance reports
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="report-name">Report Name</Label>
-              <Input 
-                id="report-name" 
-                placeholder="Q3 2024 ESG Report"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="report-type">Report Type</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select report type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">Monthly Report</SelectItem>
-                  <SelectItem value="quarterly">Quarterly Report</SelectItem>
-                  <SelectItem value="annual">Annual Report</SelectItem>
-                  <SelectItem value="custom">Custom Period</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent>
+            <form onSubmit={handleGenerateReport} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="start-date">Start Date</Label>
+                <Label htmlFor="report-name">Report Name</Label>
                 <Input 
-                  id="start-date" 
-                  type="date"
-                  defaultValue="2024-07-01"
+                  id="report-name" 
+                  placeholder="Q3 2024 ESG Report"
+                  value={reportForm.name}
+                  onChange={(e) => setReportForm(prev => ({ ...prev, name: e.target.value }))}
+                  required
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="end-date">End Date</Label>
-                <Input 
-                  id="end-date" 
-                  type="date"
-                  defaultValue="2024-09-30"
+                <Label htmlFor="report-type">Report Type</Label>
+                <Select value={reportForm.type} onValueChange={(value) => setReportForm(prev => ({ ...prev, type: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select report type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly Report</SelectItem>
+                    <SelectItem value="quarterly">Quarterly Report</SelectItem>
+                    <SelectItem value="annual">Annual Report</SelectItem>
+                    <SelectItem value="custom">Custom Period</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start-date">Start Date</Label>
+                  <Input 
+                    id="start-date" 
+                    type="date"
+                    value={reportForm.startDate}
+                    onChange={(e) => setReportForm(prev => ({ ...prev, startDate: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end-date">End Date</Label>
+                  <Input 
+                    id="end-date" 
+                    type="date"
+                    value={reportForm.endDate}
+                    onChange={(e) => setReportForm(prev => ({ ...prev, endDate: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="scope">Emission Scopes</Label>
+                <div className="flex gap-2">
+                  <Badge variant="default">Scope 2</Badge>
+                  <Badge variant="default">Scope 3</Badge>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Additional Notes</Label>
+                <Textarea 
+                  id="notes"
+                  placeholder="Include any specific context or methodology notes..."
+                  rows={3}
+                  value={reportForm.notes}
+                  onChange={(e) => setReportForm(prev => ({ ...prev, notes: e.target.value }))}
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="scope">Emission Scopes</Label>
-              <div className="flex gap-2">
-                <Badge variant="default">Scope 2</Badge>
-                <Badge variant="default">Scope 3</Badge>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea 
-                id="notes"
-                placeholder="Include any specific context or methodology notes..."
-                rows={3}
-              />
-            </div>
-
-            <Button className="w-full">
-              <FileText className="w-4 h-4 mr-2" />
-              Generate Report
-            </Button>
+              <Button type="submit" className="w-full" disabled={isGenerating}>
+                <FileText className="w-4 h-4 mr-2" />
+                {isGenerating ? "Generating..." : "Generate Report"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
 
@@ -140,7 +222,7 @@ export const ESGReports = () => {
                     <h4 className="font-medium">GHG Protocol Standard</h4>
                     <p className="text-sm text-muted-foreground">Scope 1, 2, and 3 emissions reporting</p>
                   </div>
-                  <Button variant="outline" size="sm">Use</Button>
+                  <Button variant="outline" size="sm" onClick={() => useTemplate("GHG Protocol Standard")}>Use</Button>
                 </div>
               </div>
 
@@ -150,7 +232,7 @@ export const ESGReports = () => {
                     <h4 className="font-medium">CDP Climate Report</h4>
                     <p className="text-sm text-muted-foreground">Carbon Disclosure Project format</p>
                   </div>
-                  <Button variant="outline" size="sm">Use</Button>
+                  <Button variant="outline" size="sm" onClick={() => useTemplate("CDP Climate Report")}>Use</Button>
                 </div>
               </div>
 
@@ -160,7 +242,7 @@ export const ESGReports = () => {
                     <h4 className="font-medium">EU Taxonomy</h4>
                     <p className="text-sm text-muted-foreground">European sustainability reporting</p>
                   </div>
-                  <Button variant="outline" size="sm">Use</Button>
+                  <Button variant="outline" size="sm" onClick={() => useTemplate("EU Taxonomy")}>Use</Button>
                 </div>
               </div>
 
@@ -170,7 +252,7 @@ export const ESGReports = () => {
                     <h4 className="font-medium">Custom Template</h4>
                     <p className="text-sm text-muted-foreground">Build your own reporting format</p>
                   </div>
-                  <Button variant="outline" size="sm">Create</Button>
+                  <Button variant="outline" size="sm" onClick={() => useTemplate("Custom Template")}>Create</Button>
                 </div>
               </div>
             </div>
@@ -204,11 +286,11 @@ export const ESGReports = () => {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleDownloadReport(report.name)}>
                     <Download className="w-4 h-4 mr-2" />
                     Download
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleShareReport(report.name)}>
                     <Send className="w-4 h-4 mr-2" />
                     Share
                   </Button>

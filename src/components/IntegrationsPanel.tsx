@@ -6,38 +6,44 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { Cloud, Zap, Globe, Settings } from "lucide-react";
+import { useState } from "react";
 
-const cloudProviders = [
+const initialCloudProviders = [
   { name: "Amazon Web Services", status: "connected", emissions: "34.2 kg", icon: "☁️" },
   { name: "Microsoft Azure", status: "disconnected", emissions: "0 kg", icon: "🔵" },
   { name: "Google Cloud Platform", status: "connected", emissions: "12.8 kg", icon: "🟡" },
 ];
 
-const devTools = [
+const initialDevTools = [
   { name: "GitHub", status: "connected", emissions: "8.7 kg", icon: "🐙" },
   { name: "GitLab", status: "disconnected", emissions: "0 kg", icon: "🦊" },
   { name: "Jenkins", status: "connected", emissions: "15.2 kg", icon: "🔧" },
   { name: "Docker Hub", status: "connected", emissions: "6.3 kg", icon: "🐳" },
 ];
 
-const collaborationTools = [
+const initialCollaborationTools = [
   { name: "Slack", status: "connected", emissions: "2.1 kg", icon: "💬" },
   { name: "Microsoft Teams", status: "connected", emissions: "4.8 kg", icon: "📞" },
   { name: "Zoom", status: "disconnected", emissions: "0 kg", icon: "📹" },
   { name: "Notion", status: "connected", emissions: "1.2 kg", icon: "📝" },
 ];
 
-interface IntegrationCardProps {
-  integration: {
-    name: string;
-    status: string;
-    emissions: string;
-    icon: string;
-  };
+interface Integration {
+  name: string;
+  status: string;
+  emissions: string;
+  icon: string;
 }
 
-const IntegrationCard = ({ integration }: IntegrationCardProps) => {
+interface IntegrationCardProps {
+  integration: Integration;
+  onToggle: (name: string, newStatus: string) => void;
+  onConfigure: (name: string) => void;
+}
+
+const IntegrationCard = ({ integration, onToggle, onConfigure }: IntegrationCardProps) => {
   const isConnected = integration.status === "connected";
   
   return (
@@ -57,8 +63,11 @@ const IntegrationCard = ({ integration }: IntegrationCardProps) => {
         </div>
         
         <div className="flex items-center justify-between">
-          <Switch checked={isConnected} />
-          <Button variant="outline" size="sm">
+          <Switch 
+            checked={isConnected} 
+            onCheckedChange={(checked) => onToggle(integration.name, checked ? "connected" : "disconnected")}
+          />
+          <Button variant="outline" size="sm" onClick={() => onConfigure(integration.name)}>
             {isConnected ? "Configure" : "Connect"}
           </Button>
         </div>
@@ -68,6 +77,78 @@ const IntegrationCard = ({ integration }: IntegrationCardProps) => {
 };
 
 export const IntegrationsPanel = () => {
+  const { toast } = useToast();
+  const [cloudProviders, setCloudProviders] = useState(initialCloudProviders);
+  const [devTools, setDevTools] = useState(initialDevTools);
+  const [collaborationTools, setCollaborationTools] = useState(initialCollaborationTools);
+  const [apiKey, setApiKey] = useState("ck_live_*********************");
+  const [webhookUrl, setWebhookUrl] = useState("");
+
+  const handleToggleIntegration = (category: string, name: string, newStatus: string) => {
+    const updateState = (items: Integration[]) => 
+      items.map(item => 
+        item.name === name 
+          ? { ...item, status: newStatus, emissions: newStatus === "connected" ? "5.2 kg" : "0 kg" }
+          : item
+      );
+
+    switch (category) {
+      case "cloud":
+        setCloudProviders(updateState);
+        break;
+      case "devtools":
+        setDevTools(updateState);
+        break;
+      case "collaboration":
+        setCollaborationTools(updateState);
+        break;
+    }
+
+    toast({
+      title: newStatus === "connected" ? "Integration Connected" : "Integration Disconnected",
+      description: `${name} has been ${newStatus === "connected" ? "connected" : "disconnected"} successfully`,
+    });
+  };
+
+  const handleConfigureIntegration = (name: string) => {
+    toast({
+      title: "Configure Integration",
+      description: `Opening configuration settings for ${name}`,
+    });
+  };
+
+  const handleAddIntegration = () => {
+    toast({
+      title: "Add Integration",
+      description: "Opening integration marketplace to browse available services",
+    });
+  };
+
+  const handleRegenerateApiKey = () => {
+    const newKey = "ck_live_" + Math.random().toString(36).substring(2, 23);
+    setApiKey(newKey);
+    toast({
+      title: "API Key Regenerated",
+      description: "Your API key has been regenerated successfully",
+    });
+  };
+
+  const handleSaveWebhook = () => {
+    if (!webhookUrl) {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid webhook URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Webhook Saved",
+      description: "Your webhook URL has been saved successfully",
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -77,7 +158,7 @@ export const IntegrationsPanel = () => {
             Connect your tools and services to track carbon emissions
           </p>
         </div>
-        <Button>
+        <Button onClick={handleAddIntegration}>
           <Zap className="w-4 h-4 mr-2" />
           Add Integration
         </Button>
@@ -105,7 +186,12 @@ export const IntegrationsPanel = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {cloudProviders.map((provider) => (
-                  <IntegrationCard key={provider.name} integration={provider} />
+                  <IntegrationCard 
+                    key={provider.name} 
+                    integration={provider} 
+                    onToggle={(name, status) => handleToggleIntegration("cloud", name, status)}
+                    onConfigure={handleConfigureIntegration}
+                  />
                 ))}
               </div>
             </CardContent>
@@ -126,7 +212,12 @@ export const IntegrationsPanel = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {devTools.map((tool) => (
-                  <IntegrationCard key={tool.name} integration={tool} />
+                  <IntegrationCard 
+                    key={tool.name} 
+                    integration={tool}
+                    onToggle={(name, status) => handleToggleIntegration("devtools", name, status)}
+                    onConfigure={handleConfigureIntegration}
+                  />
                 ))}
               </div>
             </CardContent>
@@ -147,7 +238,12 @@ export const IntegrationsPanel = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {collaborationTools.map((tool) => (
-                  <IntegrationCard key={tool.name} integration={tool} />
+                  <IntegrationCard 
+                    key={tool.name} 
+                    integration={tool}
+                    onToggle={(name, status) => handleToggleIntegration("collaboration", name, status)}
+                    onConfigure={handleConfigureIntegration}
+                  />
                 ))}
               </div>
             </CardContent>
@@ -169,20 +265,25 @@ export const IntegrationsPanel = () => {
                   <div className="flex gap-2">
                     <Input 
                       id="api-key" 
-                      value="ck_live_*********************" 
+                      value={apiKey}
                       readOnly 
                       className="font-mono"
                     />
-                    <Button variant="outline">Regenerate</Button>
+                    <Button variant="outline" onClick={handleRegenerateApiKey}>Regenerate</Button>
                   </div>
                 </div>
                 
                 <div>
                   <Label htmlFor="webhook-url">Webhook URL</Label>
-                  <Input 
-                    id="webhook-url" 
-                    placeholder="https://your-app.com/webhooks/carboniq"
-                  />
+                  <div className="flex gap-2">
+                    <Input 
+                      id="webhook-url" 
+                      placeholder="https://your-app.com/webhooks/carboniq"
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                    />
+                    <Button variant="outline" onClick={handleSaveWebhook}>Save</Button>
+                  </div>
                 </div>
               </div>
 

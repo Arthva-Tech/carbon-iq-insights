@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Mail, Shield, Settings } from "lucide-react";
+import { useState } from "react";
 
 const teamMembers = [
   {
@@ -55,6 +57,70 @@ const departments = [
 ];
 
 export const TeamManagement = () => {
+  const { toast } = useToast();
+  const [inviteForm, setInviteForm] = useState({
+    email: "",
+    role: "",
+    department: ""
+  });
+  const [isInviting, setIsInviting] = useState(false);
+
+  const handleInviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!inviteForm.email || !inviteForm.role || !inviteForm.department) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all fields to send an invitation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteForm.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsInviting(true);
+    
+    // Simulate sending invitation
+    setTimeout(() => {
+      toast({
+        title: "Invitation Sent",
+        description: `An invitation has been sent to ${inviteForm.email}`,
+      });
+      setIsInviting(false);
+      
+      // Reset form
+      setInviteForm({
+        email: "",
+        role: "",
+        department: ""
+      });
+    }, 1500);
+  };
+
+  const handleManageMember = (memberName: string) => {
+    toast({
+      title: "Member Settings",
+      description: `Opening settings for ${memberName}`,
+    });
+  };
+
+  const handleManagePermissions = () => {
+    toast({
+      title: "Permissions Manager",
+      description: "Opening role and permission management",
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -64,7 +130,7 @@ export const TeamManagement = () => {
             Manage team access, roles, and track departmental emissions
           </p>
         </div>
-        <Button>
+        <Button onClick={() => document.getElementById('invite-form')?.scrollIntoView({ behavior: 'smooth' })}>
           <UserPlus className="w-4 h-4 mr-2" />
           Invite Member
         </Button>
@@ -114,54 +180,59 @@ export const TeamManagement = () => {
         </Card>
 
         {/* Invite New Member */}
-        <Card>
+        <Card id="invite-form">
           <CardHeader>
             <CardTitle>Invite Team Member</CardTitle>
             <CardDescription>
               Add new members to your organization
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Input 
-                placeholder="colleague@company.com"
-                type="email"
-              />
-            </div>
-            
-            <div>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="esg">ESG Manager</SelectItem>
-                  <SelectItem value="developer">Developer</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <CardContent>
+            <form onSubmit={handleInviteMember} className="space-y-4">
+              <div>
+                <Input 
+                  placeholder="colleague@company.com"
+                  type="email"
+                  value={inviteForm.email}
+                  onChange={(e) => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Select value={inviteForm.role} onValueChange={(value) => setInviteForm(prev => ({ ...prev, role: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="esg">ESG Manager</SelectItem>
+                    <SelectItem value="developer">Developer</SelectItem>
+                    <SelectItem value="viewer">Viewer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="engineering">Engineering</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="sales">Sales</SelectItem>
-                  <SelectItem value="operations">Operations</SelectItem>
-                  <SelectItem value="sustainability">Sustainability</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <Select value={inviteForm.department} onValueChange={(value) => setInviteForm(prev => ({ ...prev, department: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="engineering">Engineering</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                    <SelectItem value="sales">Sales</SelectItem>
+                    <SelectItem value="operations">Operations</SelectItem>
+                    <SelectItem value="sustainability">Sustainability</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <Button className="w-full">
-              <Mail className="w-4 h-4 mr-2" />
-              Send Invitation
-            </Button>
+              <Button type="submit" className="w-full" disabled={isInviting}>
+                <Mail className="w-4 h-4 mr-2" />
+                {isInviting ? "Sending..." : "Send Invitation"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
 
@@ -196,7 +267,7 @@ export const TeamManagement = () => {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={handleManagePermissions}>
               <Settings className="w-4 h-4 mr-2" />
               Manage Permissions
             </Button>
@@ -240,7 +311,7 @@ export const TeamManagement = () => {
                     <div className="text-sm font-medium">{member.emissions}</div>
                     <div className="text-xs text-muted-foreground">{member.lastActive}</div>
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => handleManageMember(member.name)}>
                     <Settings className="w-4 h-4" />
                   </Button>
                 </div>
